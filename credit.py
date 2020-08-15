@@ -44,15 +44,21 @@ def sort_trasaction(dataframe):
 
 
 if __name__ == "__main__":
-    path = tkinter.filedialog.askopenfilename()
+    path = tkinter.filedialog.askopenfilenames()
     print(path)
     # df = pd.read_csv(r".\data\conciliation_20200724.csv", header=None)
     # df = pd.read_csv("D:/Users/Martin/Google_Drive/conciliation_20200724.csv", encoding = "ISO-8859-1", header=None)
-    df = pd.read_csv(path, encoding = "ISO-8859-1", header=None)
+    df_list = []
+    for file in path:
+        df_list.append(pd.read_csv(file, encoding="ISO-8859-1", header=None))
+
+    df = pd.concat(df_list, ignore_index=True)
     # print(df)
     df = clean_csv(df)
     df = sort_trasaction(df)
 
     print(df)
-    df.to_csv(path[0:-4] + "_new.csv",)
+    saveFile = tkinter.filedialog.asksaveasfilename()
+    df.to_csv(saveFile)
+    # df.to_csv(path[0:-4] + "_new.csv",)
 
