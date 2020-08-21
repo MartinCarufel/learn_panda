@@ -2,11 +2,65 @@
 import pandas as pd
 import variable
 import tkinter.filedialog
+import matplotlib.pyplot as plt
 
 # df = pd.read_csv(r".\data\conciliation_20200724.csv", header=None)
 # df = df.iloc[:, [0, 3, 4, 5, 11, 12]]
 # df = df.rename(columns={0:"Carte", 3:"Date", 4:"id", 5:"Desc", 11:"Credit", 12:"Debit"})
 # # print(df)
+
+class date_extract():
+    # def __init__(self):
+    #     year = None
+    #     mount = None
+    #     day = None
+
+    def get_year(self, date_string):
+        full_date = date_string.split("/")
+        return full_date[0]
+
+    def get_mount(self, date_string):
+        full_date = date_string.split("/")
+        return int(full_date[1])
+
+    def get_day(self, date_string):
+        full_date = date_string.split("/")
+        return full_date[2]
+
+class depense():
+    def __init__(self, dataframe, dep_type):
+        self.df = dataframe
+        self.dep_type = dep_type
+
+    def dep_type_mount(self, dep_list):
+        self.dep_list = dep_list
+        date_ex = date_extract()
+        val = {"01": [0], "02": [0], "03": [0], "04": [0], "05": [0], "06": [0],
+               "07": [0], "08": [0], "09": [0], "10": [0], "11": [0], "12": [0]}
+
+        for ind in self.df.index:
+            for x in self.dep_list:
+                if x in self.df.loc[ind]["Desc"]:
+                    val[date_ex.get_mount(self.df.loc[ind]["Date"])][0] += self.df.loc[ind]["Credit"]
+
+        return val
+
+    def dep_type_mount_v(self, dep_list):
+        self.dep_list = dep_list
+        date_ex = date_extract()
+        val = {self.dep_type: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+
+
+
+        for ind in self.df.index:
+            for x in self.dep_list:
+                if x in self.df.loc[ind]["Desc"]:
+                    val[self.dep_type][date_ex.get_mount(self.df.loc[ind]["Date"])-1] += self.df.loc[ind]["Credit"]
+                    # val[date_ex.get_mount(self.df.loc[ind]["Date"])][0] += self.df.loc[ind]["Credit"]
+
+        return val
+
+
 
 def clean_csv(dataframe):
     df = dataframe
@@ -40,7 +94,6 @@ def sort_trasaction(dataframe):
             df.loc[ind, "att"] = find_transaction(df.loc[ind, "Desc"], variable.achat_anne_marie)
     return df
 
-    pass
 
 
 if __name__ == "__main__":
@@ -58,7 +111,39 @@ if __name__ == "__main__":
     df = sort_trasaction(df)
 
     print(df)
-    saveFile = tkinter.filedialog.asksaveasfilename()
-    df.to_csv(saveFile)
+    date_ex = date_extract()
+    for ind in df.index:
+        days = date_ex.get_day(df.loc[ind, "Date"])
+        # print(type(days))
+
+    essence = ["ULTRAMAR", "SHELL", "PETRO"]
+    epicerie = ["METRO", "IGA", "SUPER C"]
+    pharm = ["JEAN COUTU", "UNIPRIX"]
+    dp_ess = depense(df, "Essence")
+    dp_epi = depense(df, "Epicerie")
+    dp_pharm = depense(df, "Pharmacie")
+
+    dp_essence = dp_ess.dep_type_mount_v(essence)
+    dp_epicerie = dp_epi.dep_type_mount_v(epicerie)
+    dp_pharmacie = dp_pharm.dep_type_mount_v(pharm)
+
+    dp_ess_df = pd.DataFrame(dp_essence,
+                index=['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'])
+    dp_epicerie_df = pd.DataFrame(dp_epicerie,
+                index=['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'])
+    dp_pharmacie_df = pd.DataFrame(dp_pharmacie,
+                index=['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'])
+    # saveFile = tkinter.filedialog.asksaveasfilename()
+    # df.to_csv(saveFile)
     # df.to_csv(path[0:-4] + "_new.csv",)
+    # frame = [dp_ess_df, dp_epicerie_df]
+    # result = pd.concat(frame)
+    # print(dp_ess_df)
+    # print(dp_ess_df)
+    result = pd.merge(dp_ess_df, dp_epicerie_df, left_index=True, right_index=True)
+    result = pd.merge(result, dp_pharmacie_df, left_index=True, right_index=True)
+
+    result.plot(kind="bar")
+    # dp_val_df.plot(kind="bar")
+    plt.show()
 
