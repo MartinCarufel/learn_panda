@@ -3,9 +3,11 @@ import pandas as pd
 import variable
 import tkinter.filedialog
 import matplotlib.pyplot as plt
+import save_file
 
 not_a_resto = ["AGOO", "BELL", "JEAN COUTU", "IGA", "LE LUNCH",  "METRO", "NETFLIX", "RONA", "CDN TIRE", "ULTRAMAR" ,"VIRGIN"]
-resto = ["AU COQ", "DOMINOS", "EGGSQUIS", "HARVEYS", "MCDONALD", "SUBWAY", "JUMBO"]
+# not_a_resto = ["AGOO"]
+# resto = ["AU COQ", "DOMINOS", "EGGSQUIS", "HARVEYS", "MCDONALD", "SUBWAY", "JUMBO"]
 
 def clean_csv(dataframe):
     df = dataframe
@@ -34,12 +36,37 @@ if __name__ == "__main__":
     df = clean_csv(df)
     # print(df)
     df_no_duplicate = df.drop_duplicates(subset="Desc")
-    df_no_duplicate.to_csv("no_duplicate.csv")
+    # df_no_duplicate.to_csv("no_duplicate.csv")
 
 
     for ind in df_no_duplicate.index:
-        for value in not_a_resto:
-            if value in df_no_duplicate.loc[ind, "Desc"]:
-                print("not a resto")
+        resto = save_file.read_file_list("resto.csv")
+        not_resto = save_file.read_file_list("not_resto.csv")
+        if len(resto[0]) > 1 and len(not_resto[0]) > 1:
+            identified = not_a_resto + resto + not_resto
+        elif len(resto[0]) > 1 and len(not_resto[0]) < 1:
+            identified = not_a_resto + resto
+        elif len(resto[0]) < 1 and len(not_resto[0]) > 1:
+            identified = not_a_resto + not_resto
+        else:
+            identified = not_a_resto
+
+        # print(df_no_duplicate.loc[ind, "Desc"])
+        # print(identified)
+        # input("press enter")
+        res = any(ident in df_no_duplicate.loc[ind, "Desc"] for ident in identified)
+
+        # using list comprehension
+        # checking if string contains list element
+        # res = [ele for ele in identified if (ele not in df_no_duplicate.loc[ind, "Desc"])]
+        # res = any(ele in df_no_duplicate.loc[ind, "Desc"] for ele in identified)
+        if not res:
+            print(df_no_duplicate.loc[ind, "Desc"])
+            rep = input("Es-ce un restaurant ? (o/n)")
+            if rep.upper() == "O":
+                save_file.add_resto_keyword()
+            else:
+                save_file.add_not_resto_keyword()
+
 
 

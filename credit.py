@@ -3,6 +3,7 @@ import pandas as pd
 import variable
 import tkinter.filedialog
 import matplotlib.pyplot as plt
+import save_file
 
 # df = pd.read_csv(r".\data\conciliation_20200724.csv", header=None)
 # df = df.iloc[:, [0, 3, 4, 5, 11, 12]]
@@ -45,20 +46,22 @@ class depense():
 
         return val
 
-    def dep_type_mount_v(self, dep_list):
+    def dep_type_mount_v(self, dep_list, year):
         self.dep_list = dep_list
+        self.year = year
         date_ex = date_extract()
         val = {self.dep_type: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-
-
+        val_list = []
 
         for ind in self.df.index:
             for x in self.dep_list:
-                if x in self.df.loc[ind]["Desc"]:
+                if x in self.df.loc[ind]["Desc"] and date_ex.get_year(self.df.loc[ind]["Date"])==year:
+                    val_list.append(str(self.df.loc[ind]["Date"])+"-"+self.df.loc[ind]["Desc"]+": "+str(self.df.loc[ind]["Credit"]))
                     val[self.dep_type][date_ex.get_mount(self.df.loc[ind]["Date"])-1] += self.df.loc[ind]["Credit"]
+                    break
                     # val[date_ex.get_mount(self.df.loc[ind]["Date"])][0] += self.df.loc[ind]["Credit"]
 
-        return val
+        return (val, val_list)
 
 
 
@@ -97,8 +100,8 @@ def sort_trasaction(dataframe):
 
 
 if __name__ == "__main__":
+    year = input("Pour quel année ?  ")
     path = tkinter.filedialog.askopenfilenames()
-    print(path)
     # df = pd.read_csv(r".\data\conciliation_20200724.csv", header=None)
     # df = pd.read_csv("D:/Users/Martin/Google_Drive/conciliation_20200724.csv", encoding = "ISO-8859-1", header=None)
     df_list = []
@@ -116,22 +119,28 @@ if __name__ == "__main__":
         days = date_ex.get_day(df.loc[ind, "Date"])
         # print(type(days))
 
-    essence = ["ULTRAMAR", "SHELL", "PETRO"]
+    essence = ["ULTRAMAR", "SHELL", "PETRO", "ESSO", "PETROCAN"]
     epicerie = ["METRO", "IGA", "SUPER C"]
     pharm = ["JEAN COUTU", "UNIPRIX"]
+    resto = save_file.read_file_list("resto.csv")
+
     dp_ess = depense(df, "Essence")
     dp_epi = depense(df, "Epicerie")
     dp_pharm = depense(df, "Pharmacie")
+    dp_resto = depense(df,"resto")
 
-    dp_essence = dp_ess.dep_type_mount_v(essence)
-    dp_epicerie = dp_epi.dep_type_mount_v(epicerie)
-    dp_pharmacie = dp_pharm.dep_type_mount_v(pharm)
+    dp_essence, dp_essence_list = dp_ess.dep_type_mount_v(essence, year)
+    dp_epicerie, dp_epicerie_list = dp_epi.dep_type_mount_v(epicerie, year)
+    dp_pharmacie, dp_pharmacie_list = dp_pharm.dep_type_mount_v(pharm, year)
+    dp_restaurant, dp_restaurant_list = dp_resto.dep_type_mount_v(resto, year)
 
     dp_ess_df = pd.DataFrame(dp_essence,
                 index=['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'])
     dp_epicerie_df = pd.DataFrame(dp_epicerie,
                 index=['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'])
     dp_pharmacie_df = pd.DataFrame(dp_pharmacie,
+                index=['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'])
+    dp_restaurant_df = pd.DataFrame(dp_restaurant,
                 index=['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'])
     # saveFile = tkinter.filedialog.asksaveasfilename()
     # df.to_csv(saveFile)
@@ -142,8 +151,11 @@ if __name__ == "__main__":
     # print(dp_ess_df)
     result = pd.merge(dp_ess_df, dp_epicerie_df, left_index=True, right_index=True)
     result = pd.merge(result, dp_pharmacie_df, left_index=True, right_index=True)
-
+    result = pd.merge(result, dp_restaurant_df, left_index=True, right_index=True)
+    result.to_csv("result_data.csv")
     result.plot(kind="bar")
+    for i in range(len(dp_restaurant_list)):
+        print(dp_restaurant_list[i])
     # dp_val_df.plot(kind="bar")
     plt.show()
 
